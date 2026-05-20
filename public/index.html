@@ -1,0 +1,1015 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Doable — Your Visual Todo</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0d0d0f;
+    --surface: #17171a;
+    --surface2: #1f1f23;
+    --border: rgba(255,255,255,0.07);
+    --border2: rgba(255,255,255,0.13);
+    --text: #f0eee9;
+    --muted: #7a7874;
+    --accent: #e8c547;
+    --accent2: #d4a843;
+    --danger: #e85c5c;
+    --success: #5ce8a0;
+    --font-head: 'Syne', sans-serif;
+    --font-body: 'DM Sans', sans-serif;
+    --radius: 16px;
+    --radius-sm: 8px;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-body);
+    font-size: 15px;
+    line-height: 1.6;
+    min-height: 100vh;
+  }
+
+  /* Ambient background */
+  body::before {
+    content: '';
+    position: fixed;
+    top: -200px;
+    left: -200px;
+    width: 600px;
+    height: 600px;
+    background: radial-gradient(circle, rgba(232,197,71,0.06) 0%, transparent 70%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  body::after {
+    content: '';
+    position: fixed;
+    bottom: -200px;
+    right: -200px;
+    width: 500px;
+    height: 500px;
+    background: radial-gradient(circle, rgba(92,232,160,0.04) 0%, transparent 70%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .app {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 0 20px 80px;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* Header */
+  header {
+    padding: 48px 0 40px;
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+  }
+
+  .logo {
+    font-family: var(--font-head);
+    font-size: 32px;
+    font-weight: 800;
+    letter-spacing: -1px;
+    color: var(--text);
+  }
+
+  .logo span {
+    color: var(--accent);
+  }
+
+  .header-meta {
+    text-align: right;
+  }
+
+  .date-label {
+    font-size: 12px;
+    color: var(--muted);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    font-weight: 500;
+  }
+
+  .task-count {
+    font-family: var(--font-head);
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--accent);
+    margin-top: 2px;
+  }
+
+  /* Stats bar */
+  .stats-bar {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    margin-bottom: 32px;
+  }
+
+  .stat {
+    background: var(--surface);
+    border: 0.5px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 14px 16px;
+    transition: border-color 0.2s;
+  }
+
+  .stat:hover { border-color: var(--border2); }
+
+  .stat-num {
+    font-family: var(--font-head);
+    font-size: 24px;
+    font-weight: 700;
+    line-height: 1;
+    margin-bottom: 4px;
+  }
+
+  .stat-num.all { color: var(--text); }
+  .stat-num.done { color: var(--success); }
+  .stat-num.pending { color: var(--accent); }
+
+  .stat-label {
+    font-size: 11px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-weight: 500;
+  }
+
+  /* Progress bar */
+  .progress-wrap {
+    height: 3px;
+    background: var(--surface2);
+    border-radius: 99px;
+    margin-bottom: 36px;
+    overflow: hidden;
+  }
+
+  .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent), var(--success));
+    border-radius: 99px;
+    transition: width 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  /* Form */
+  .form-card {
+    background: var(--surface);
+    border: 0.5px solid var(--border);
+    border-radius: var(--radius);
+    padding: 24px;
+    margin-bottom: 32px;
+    transition: border-color 0.2s;
+  }
+
+  .form-card:focus-within { border-color: var(--border2); }
+
+  .form-title {
+    font-family: var(--font-head);
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 16px;
+  }
+
+  .input-row {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  input[type="text"],
+  textarea {
+    background: var(--surface2);
+    border: 0.5px solid var(--border);
+    border-radius: var(--radius-sm);
+    color: var(--text);
+    font-family: var(--font-body);
+    font-size: 15px;
+    padding: 12px 14px;
+    width: 100%;
+    outline: none;
+    transition: border-color 0.2s;
+    resize: none;
+  }
+
+  input[type="text"]::placeholder,
+  textarea::placeholder { color: var(--muted); }
+
+  input[type="text"]:focus,
+  textarea:focus { border-color: rgba(232,197,71,0.4); }
+
+  /* Image upload zone */
+  .upload-zone {
+    border: 1px dashed var(--border2);
+    border-radius: var(--radius-sm);
+    padding: 20px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .upload-zone:hover {
+    border-color: rgba(232,197,71,0.35);
+    background: rgba(232,197,71,0.03);
+  }
+
+  .upload-zone.dragging {
+    border-color: var(--accent);
+    background: rgba(232,197,71,0.06);
+  }
+
+  .upload-zone input[type="file"] {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    cursor: pointer;
+    width: 100%;
+    height: 100%;
+  }
+
+  .upload-icon {
+    font-size: 28px;
+    margin-bottom: 8px;
+    display: block;
+  }
+
+  .upload-text {
+    font-size: 13px;
+    color: var(--muted);
+  }
+
+  .upload-text strong {
+    color: var(--accent);
+    font-weight: 500;
+  }
+
+  .upload-preview {
+    display: none;
+    align-items: center;
+    gap: 12px;
+    text-align: left;
+  }
+
+  .upload-preview.active { display: flex; }
+
+  .preview-thumb {
+    width: 48px;
+    height: 48px;
+    border-radius: 8px;
+    object-fit: cover;
+    border: 0.5px solid var(--border2);
+  }
+
+  .preview-info { flex: 1; min-width: 0; }
+
+  .preview-name {
+    font-size: 13px;
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .preview-size { font-size: 11px; color: var(--muted); }
+
+  .preview-remove {
+    background: none;
+    border: none;
+    color: var(--muted);
+    cursor: pointer;
+    font-size: 18px;
+    padding: 4px;
+    transition: color 0.2s;
+    line-height: 1;
+  }
+
+  .preview-remove:hover { color: var(--danger); }
+
+  .form-actions {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 16px;
+  }
+
+  .btn-add {
+    background: var(--accent);
+    color: #0d0d0f;
+    border: none;
+    border-radius: var(--radius-sm);
+    font-family: var(--font-head);
+    font-size: 14px;
+    font-weight: 700;
+    padding: 11px 24px;
+    cursor: pointer;
+    transition: all 0.15s;
+    letter-spacing: 0.02em;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .btn-add:hover { background: var(--accent2); transform: translateY(-1px); }
+  .btn-add:active { transform: translateY(0) scale(0.98); }
+
+  .btn-add.loading {
+    opacity: 0.7;
+    pointer-events: none;
+  }
+
+  .spinner {
+    width: 14px;
+    height: 14px;
+    border: 2px solid rgba(0,0,0,0.2);
+    border-top-color: #000;
+    border-radius: 50%;
+    animation: spin 0.6s linear infinite;
+    display: none;
+  }
+
+  .btn-add.loading .spinner { display: block; }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* Filter tabs */
+  .filter-row {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 20px;
+  }
+
+  .filter-btn {
+    background: none;
+    border: 0.5px solid var(--border);
+    border-radius: 99px;
+    color: var(--muted);
+    font-family: var(--font-body);
+    font-size: 13px;
+    font-weight: 500;
+    padding: 6px 14px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .filter-btn:hover { border-color: var(--border2); color: var(--text); }
+
+  .filter-btn.active {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #0d0d0f;
+    font-weight: 600;
+  }
+
+  /* Todo list */
+  .todo-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .todo-item {
+    background: var(--surface);
+    border: 0.5px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px 18px;
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    transition: all 0.2s;
+    animation: slideIn 0.3s cubic-bezier(0.34, 1.2, 0.64, 1);
+  }
+
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateY(-8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .todo-item:hover { border-color: var(--border2); }
+
+  .todo-item.completed {
+    opacity: 0.5;
+  }
+
+  .todo-item.completed .todo-title {
+    text-decoration: line-through;
+    color: var(--muted);
+  }
+
+  /* Checkbox */
+  .check-wrap {
+    margin-top: 2px;
+    flex-shrink: 0;
+  }
+
+  .check-wrap input[type="checkbox"] { display: none; }
+
+  .check-box {
+    width: 20px;
+    height: 20px;
+    border-radius: 6px;
+    border: 1.5px solid var(--border2);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+    background: transparent;
+  }
+
+  .check-box:hover { border-color: var(--accent); }
+
+  .check-box.checked {
+    background: var(--success);
+    border-color: var(--success);
+  }
+
+  .check-box.checked::after {
+    content: '';
+    width: 10px;
+    height: 6px;
+    border-left: 2px solid #0d0d0f;
+    border-bottom: 2px solid #0d0d0f;
+    transform: rotate(-45deg) translateY(-1px);
+    display: block;
+  }
+
+  /* Todo body */
+  .todo-body { flex: 1; min-width: 0; }
+
+  .todo-title {
+    font-size: 15px;
+    font-weight: 500;
+    line-height: 1.4;
+    margin-bottom: 4px;
+    transition: color 0.2s;
+  }
+
+  .todo-desc {
+    font-size: 13px;
+    color: var(--muted);
+    line-height: 1.5;
+    margin-bottom: 10px;
+  }
+
+  /* Todo image */
+  .todo-image-wrap {
+    margin-top: 10px;
+    border-radius: 10px;
+    overflow: hidden;
+    max-height: 200px;
+    cursor: pointer;
+    position: relative;
+  }
+
+  .todo-image-wrap img {
+    width: 100%;
+    height: 200px;
+    object-fit: cover;
+    display: block;
+    transition: transform 0.3s;
+  }
+
+  .todo-image-wrap:hover img { transform: scale(1.02); }
+
+  .todo-meta {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 8px;
+  }
+
+  .todo-date {
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: 0.03em;
+  }
+
+  .has-image-badge {
+    font-size: 10px;
+    background: rgba(232,197,71,0.1);
+    color: var(--accent);
+    border-radius: 99px;
+    padding: 2px 8px;
+    font-weight: 500;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+
+  /* Actions */
+  .todo-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    flex-shrink: 0;
+    opacity: 0;
+    transition: opacity 0.2s;
+  }
+
+  .todo-item:hover .todo-actions { opacity: 1; }
+
+  .action-btn {
+    background: none;
+    border: 0.5px solid var(--border);
+    border-radius: var(--radius-sm);
+    color: var(--muted);
+    font-size: 12px;
+    padding: 5px 10px;
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+    font-family: var(--font-body);
+  }
+
+  .action-btn:hover {
+    border-color: var(--border2);
+    color: var(--text);
+  }
+
+  .action-btn.delete:hover {
+    border-color: rgba(232, 92, 92, 0.4);
+    color: var(--danger);
+    background: rgba(232, 92, 92, 0.05);
+  }
+
+  /* Empty state */
+  .empty-state {
+    text-align: center;
+    padding: 64px 32px;
+    display: none;
+  }
+
+  .empty-state.visible { display: block; }
+
+  .empty-icon {
+    font-size: 48px;
+    margin-bottom: 16px;
+    opacity: 0.3;
+    display: block;
+  }
+
+  .empty-title {
+    font-family: var(--font-head);
+    font-size: 18px;
+    font-weight: 700;
+    margin-bottom: 8px;
+    color: var(--muted);
+  }
+
+  .empty-text {
+    font-size: 14px;
+    color: var(--muted);
+    opacity: 0.7;
+  }
+
+  /* Toast */
+  .toast-container {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    z-index: 100;
+  }
+
+  .toast {
+    background: var(--surface2);
+    border: 0.5px solid var(--border2);
+    border-radius: var(--radius-sm);
+    padding: 12px 16px;
+    font-size: 14px;
+    animation: toastIn 0.3s cubic-bezier(0.34, 1.2, 0.64, 1);
+    max-width: 300px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .toast.success { border-color: rgba(92,232,160,0.3); }
+  .toast.error { border-color: rgba(232,92,92,0.3); }
+
+  .toast-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  .toast.success .toast-dot { background: var(--success); }
+  .toast.error .toast-dot { background: var(--danger); }
+
+  @keyframes toastIn {
+    from { opacity: 0; transform: translateX(20px); }
+    to { opacity: 1; transform: translateX(0); }
+  }
+
+  /* Lightbox */
+  .lightbox {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.9);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 200;
+    cursor: pointer;
+  }
+
+  .lightbox.open { display: flex; }
+
+  .lightbox img {
+    max-width: 90vw;
+    max-height: 90vh;
+    border-radius: 12px;
+    object-fit: contain;
+  }
+
+  /* Loading skeleton */
+  .skeleton {
+    background: linear-gradient(90deg, var(--surface) 0%, var(--surface2) 50%, var(--surface) 100%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+    border-radius: var(--radius);
+    height: 80px;
+  }
+
+  @keyframes shimmer {
+    from { background-position: 200% 0; }
+    to { background-position: -200% 0; }
+  }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 99px; }
+
+  @media (max-width: 500px) {
+    .stats-bar { grid-template-columns: 1fr 1fr; }
+    header { flex-direction: column; align-items: flex-start; gap: 8px; }
+    .todo-actions { opacity: 1; }
+  }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <header>
+    <div class="logo">do<span>·</span>able</div>
+    <div class="header-meta">
+      <div class="date-label" id="date-label"></div>
+      <div class="task-count" id="task-count">0 tasks</div>
+    </div>
+  </header>
+
+  <div class="stats-bar">
+    <div class="stat">
+      <div class="stat-num all" id="stat-all">0</div>
+      <div class="stat-label">Total</div>
+    </div>
+    <div class="stat">
+      <div class="stat-num pending" id="stat-pending">0</div>
+      <div class="stat-label">Pending</div>
+    </div>
+    <div class="stat">
+      <div class="stat-num done" id="stat-done">0</div>
+      <div class="stat-label">Done</div>
+    </div>
+  </div>
+
+  <div class="progress-wrap">
+    <div class="progress-fill" id="progress-fill" style="width: 0%"></div>
+  </div>
+
+  <div class="form-card">
+    <div class="form-title">New task</div>
+    <div class="input-row">
+      <input type="text" id="todo-title" placeholder="What needs to be done?" autocomplete="off" />
+      <textarea id="todo-desc" rows="2" placeholder="Add a description (optional)"></textarea>
+
+      <div class="upload-zone" id="upload-zone">
+        <input type="file" id="file-input" accept="image/*" />
+        <div id="upload-placeholder">
+          <span class="upload-icon">📎</span>
+          <div class="upload-text"><strong>Attach image</strong> or drag & drop</div>
+        </div>
+        <div class="upload-preview" id="upload-preview">
+          <img class="preview-thumb" id="preview-thumb" src="" alt="" />
+          <div class="preview-info">
+            <div class="preview-name" id="preview-name"></div>
+            <div class="preview-size" id="preview-size"></div>
+          </div>
+          <button class="preview-remove" id="preview-remove" title="Remove image">×</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="form-actions">
+      <button class="btn-add" id="btn-add">
+        <div class="spinner"></div>
+        <span id="btn-text">Add task</span>
+      </button>
+    </div>
+  </div>
+
+  <div class="filter-row">
+    <button class="filter-btn active" data-filter="all">All</button>
+    <button class="filter-btn" data-filter="pending">Pending</button>
+    <button class="filter-btn" data-filter="completed">Completed</button>
+  </div>
+
+  <div class="todo-list" id="todo-list">
+    <div class="skeleton"></div>
+    <div class="skeleton" style="height:60px;opacity:0.6;"></div>
+    <div class="skeleton" style="height:100px;opacity:0.4;"></div>
+  </div>
+
+  <div class="empty-state" id="empty-state">
+    <span class="empty-icon">✦</span>
+    <div class="empty-title">Nothing here yet</div>
+    <div class="empty-text">Add a task above to get started</div>
+  </div>
+</div>
+
+<div class="toast-container" id="toast-container"></div>
+
+<div class="lightbox" id="lightbox">
+  <img id="lightbox-img" src="" alt="Full image" />
+</div>
+
+<script>
+  const API = '/todo';
+  let todos = [];
+  let currentFilter = 'all';
+  let selectedFile = null;
+
+  /* ---- Date ---- */
+  const days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const now = new Date();
+  document.getElementById('date-label').textContent =
+    `${days[now.getDay()]}, ${months[now.getMonth()]} ${now.getDate()}`;
+
+  /* ---- Toast ---- */
+  function toast(msg, type = 'success') {
+    const tc = document.getElementById('toast-container');
+    const el = document.createElement('div');
+    el.className = `toast ${type}`;
+    el.innerHTML = `<div class="toast-dot"></div><span>${msg}</span>`;
+    tc.appendChild(el);
+    setTimeout(() => el.remove(), 3000);
+  }
+
+  /* ---- Stats ---- */
+  function updateStats() {
+    const all = todos.length;
+    const done = todos.filter(t => t.completed).length;
+    const pending = all - done;
+    document.getElementById('stat-all').textContent = all;
+    document.getElementById('stat-done').textContent = done;
+    document.getElementById('stat-pending').textContent = pending;
+    document.getElementById('task-count').textContent = `${all} task${all !== 1 ? 's' : ''}`;
+    document.getElementById('progress-fill').style.width = all ? `${(done/all)*100}%` : '0%';
+  }
+
+  /* ---- Render ---- */
+  function formatDate(d) {
+    const date = new Date(d);
+    return `${months[date.getMonth()]} ${date.getDate()}`;
+  }
+
+  function renderTodos() {
+    const list = document.getElementById('todo-list');
+    const empty = document.getElementById('empty-state');
+    const filtered = todos.filter(t => {
+      if (currentFilter === 'pending') return !t.completed;
+      if (currentFilter === 'completed') return t.completed;
+      return true;
+    });
+
+    if (filtered.length === 0) {
+      list.innerHTML = '';
+      empty.classList.add('visible');
+      return;
+    }
+
+    empty.classList.remove('visible');
+    list.innerHTML = filtered.map(t => `
+      <div class="todo-item ${t.completed ? 'completed' : ''}" data-id="${t._id}">
+        <div class="check-wrap">
+          <div class="check-box ${t.completed ? 'checked' : ''}" onclick="toggleTodo('${t._id}', ${!t.completed})"></div>
+        </div>
+        <div class="todo-body">
+          <div class="todo-title">${escHtml(t.title)}</div>
+          ${t.details ? `<div class="todo-desc">${escHtml(t.details)}</div>` : ''}
+          ${t.image ? `
+            <div class="todo-image-wrap" onclick="openLightbox('${t.image}')">
+              <img src="${t.image}" alt="Task image" loading="lazy" />
+            </div>
+          ` : ''}
+          <div class="todo-meta">
+            ${t.createdAt ? `<span class="todo-date">${formatDate(t.createdAt)}</span>` : ''}
+            ${t.image ? `<span class="has-image-badge">📷 photo</span>` : ''}
+          </div>
+        </div>
+        <div class="todo-actions">
+          <button class="action-btn delete" onclick="deleteTodo('${t._id}')">Delete</button>
+        </div>
+      </div>
+    `).join('');
+
+    updateStats();
+  }
+
+  function escHtml(str) {
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  }
+
+  /* ---- Fetch todos ---- */
+  async function fetchTodos() {
+    try {
+      const res = await fetch(`${API}/get-all-todos`);
+      if (!res.ok) throw new Error();
+      const json = await res.json();
+      todos = json.data;
+      updateStats();
+      renderTodos();
+    } catch {
+      document.getElementById('todo-list').innerHTML = '';
+      toast('Could not load tasks. Is your server running?', 'error');
+    }
+  }
+
+  /* ---- Add todo ---- */
+  async function addTodo() {
+    const title = document.getElementById('todo-title').value.trim();
+    if (!title) {
+      document.getElementById('todo-title').focus();
+      toast('Please enter a task title', 'error');
+      return;
+    }
+
+    const desc = document.getElementById('todo-desc').value.trim();
+    const btn = document.getElementById('btn-add');
+    btn.classList.add('loading');
+    document.getElementById('btn-text').textContent = 'Adding...';
+
+    try {
+      let res;
+      if (selectedFile) {
+        const formData = new FormData();
+        formData.append('title', title);
+        if (desc) formData.append('details', desc);
+        formData.append('image', selectedFile);
+        res = await fetch(`${API}/create-todo-with-image`, { method: 'POST', body: formData });
+      } else {
+        res = await fetch(`${API}/create-todo`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ title, details: desc })
+        });
+      }
+      if (!res.ok) throw new Error();
+      const json = await res.json();
+      const newTodo = json.data;
+
+      todos.unshift(newTodo);
+      renderTodos();
+      updateStats();
+
+      document.getElementById('todo-title').value = '';
+      document.getElementById('todo-desc').value = '';
+      clearFile();
+      toast('Task added ✓');
+    } catch {
+      toast('Failed to add task', 'error');
+    } finally {
+      btn.classList.remove('loading');
+      document.getElementById('btn-text').textContent = 'Add task';
+    }
+  }
+
+  /* ---- Toggle ---- */
+  async function toggleTodo(id, completed) {
+    try {
+      const res = await fetch(`${API}/update-todos/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ completed })
+      });
+      if (!res.ok) throw new Error();
+      todos = todos.map(t => t._id === id ? { ...t, completed } : t);
+      renderTodos();
+      toast(completed ? 'Marked as done ✓' : 'Marked as pending');
+    } catch {
+      toast('Update failed', 'error');
+    }
+  }
+
+  /* ---- Delete ---- */
+  async function deleteTodo(id) {
+    try {
+      const res = await fetch(`${API}/delete-todos/${id}`, { method: 'DELETE' });
+      if (!res.ok) throw new Error();
+      todos = todos.filter(t => t._id !== id);
+      renderTodos();
+      updateStats();
+      toast('Task deleted');
+    } catch {
+      toast('Delete failed', 'error');
+    }
+  }
+
+  /* ---- File upload ---- */
+  function handleFile(file) {
+    if (!file || !file.type.startsWith('image/')) {
+      toast('Please select an image file', 'error');
+      return;
+    }
+    selectedFile = file;
+    const reader = new FileReader();
+    reader.onload = e => {
+      document.getElementById('preview-thumb').src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+    document.getElementById('preview-name').textContent = file.name;
+    document.getElementById('preview-size').textContent = `${(file.size / 1024).toFixed(1)} KB`;
+    document.getElementById('upload-placeholder').style.display = 'none';
+    document.getElementById('upload-preview').classList.add('active');
+  }
+
+  function clearFile() {
+    selectedFile = null;
+    document.getElementById('file-input').value = '';
+    document.getElementById('preview-thumb').src = '';
+    document.getElementById('upload-placeholder').style.display = 'block';
+    document.getElementById('upload-preview').classList.remove('active');
+  }
+
+  document.getElementById('file-input').addEventListener('change', e => {
+    handleFile(e.target.files[0]);
+  });
+
+  document.getElementById('preview-remove').addEventListener('click', e => {
+    e.stopPropagation();
+    clearFile();
+  });
+
+  const zone = document.getElementById('upload-zone');
+  zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('dragging'); });
+  zone.addEventListener('dragleave', () => zone.classList.remove('dragging'));
+  zone.addEventListener('drop', e => {
+    e.preventDefault();
+    zone.classList.remove('dragging');
+    handleFile(e.dataTransfer.files[0]);
+  });
+
+  /* ---- Filters ---- */
+  document.querySelectorAll('.filter-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      currentFilter = btn.dataset.filter;
+      renderTodos();
+    });
+  });
+
+  /* ---- Keyboard shortcut ---- */
+  document.getElementById('todo-title').addEventListener('keydown', e => {
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); addTodo(); }
+  });
+
+  document.getElementById('btn-add').addEventListener('click', addTodo);
+
+  /* ---- Lightbox ---- */
+  function openLightbox(url) {
+    document.getElementById('lightbox-img').src = url;
+    document.getElementById('lightbox').classList.add('open');
+  }
+
+  document.getElementById('lightbox').addEventListener('click', () => {
+    document.getElementById('lightbox').classList.remove('open');
+  });
+
+  /* ---- Init ---- */
+  fetchTodos();
+</script>
+</body>
+</html>
