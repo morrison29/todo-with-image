@@ -1,4 +1,4 @@
-const mongoose = require("mongoose")
+import mongoose from "mongoose";
 
 const todoSchema = new mongoose.Schema({
     title : {
@@ -6,6 +6,9 @@ const todoSchema = new mongoose.Schema({
         required : true
     },
     details : {
+        type : String
+    },
+    image : {
         type : String
     },
     time : {
@@ -20,4 +23,4 @@ const todoSchema = new mongoose.Schema({
 
 const Todomodel = mongoose.model('Todo', todoSchema);
 
-module.exports = Todomodel
+export default Todomodel;

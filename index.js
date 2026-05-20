@@ -1,20 +1,19 @@
-const express = require("express");
-const cors = require("cors");
-const mongoose = require("mongoose");
-const router = require('./routes/todoRoutes');
+import express from 'express';
+import cors from 'cors';
+import dotenv from 'dotenv';
+import connectDB from './config/database.js';
+import todoRouter from './routes/todoRoutes.js';
+import userRouter from './routes/userRoutes.js';
+dotenv.config();
 
 const app = express();
-const port = 7000;
+const port = process.env.PORT
 app.use(cors());
 app.use(express.json());
-app.use('/todo', router);
+app.use('/todo', todoRouter);
+app.use('/user', userRouter);
 
-const liveUrl = "mongodb://morrison:morrison001@ac-acwpk9y-shard-00-00.xsnrajc.mongodb.net:27017,ac-acwpk9y-shard-00-01.xsnrajc.mongodb.net:27017,ac-acwpk9y-shard-00-02.xsnrajc.mongodb.net:27017/NOTEDB?ssl=true&replicaSet=atlas-kidg83-shard-0&authSource=admin&appName=Cluster0"
-
-
-mongoose.connect(liveUrl)
-.then(() => console.log("MongoDb Connected"))
-.catch((err) => console.error("Connection Error: ", err));
+connectDB();
 
 app.get('/', (req, res) => {
     res.send("Welcome to My Note App");

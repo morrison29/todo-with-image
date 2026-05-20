@@ -1,11 +1,14 @@
-const express = require("express");
-const router = express.Router();
-const { newTodo, updateTodo, getAllTodos, getOneTodo, deleteTodo } = require('../controller/todoController');
+import express from 'express';
+const todoRouter = express.Router();
+import upload from '../config/multer.js';
+import {newTodo, newTodoWithImage, updateTodo, getAllTodos, getOneTodo, deleteTodo} from '../controller/todoController.js';
 
-router.post('/create-todo', newTodo);
-router.patch('/update-todos/:id', updateTodo);
-router.get('/get-all-todos', getAllTodos);
-router.get('/get-one-todo/:id', getOneTodo);
-router.delete('/delete-todos/:id', deleteTodo);
+todoRouter.post('/create-todo', newTodo);
+todoRouter.post('/create-todo-with-image', upload.single('image'), newTodoWithImage);
+todoRouter.patch('/update-todos/:id', updateTodo);
+todoRouter.get('/get-all-todos', getAllTodos);
+todoRouter.get('/get-one-todo/:id', getOneTodo);
+todoRouter.delete('/delete-todos/:id', deleteTodo);
 
-module.exports = router;
+
+export default todoRouter;

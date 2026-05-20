@@ -1,4 +1,5 @@
-const Todomodel = require('../model/todoModel');
+import Todomodel from '../model/todoModel.js';
+
 
 const newTodo = async (req, res) =>{
     try {
@@ -8,6 +9,17 @@ const newTodo = async (req, res) =>{
     } catch (error) {
         res.status(500).json({ message: error.message, error : error.message });
   } 
+}
+
+const newTodoWithImage = async (req, res) => {
+    try {
+        const {title, details} =  req.body;
+        const image = req.file?.path;
+        const newTodo =  await Todomodel.create({title , details, image});
+        res.status(201).json({ message: "Task created successfully", data: newTodo });
+    } catch (error) {
+        res.status(500).json({ message: error.message, error : error.message });
+  }
 }
 
 const updateTodo = async (req, res) => {
@@ -49,10 +61,5 @@ const deleteTodo = async (req, res) => {
     }
 }
 
-module.exports = {
-    newTodo,
-    updateTodo,
-    getAllTodos,
-    getOneTodo,
-    deleteTodo
-}
+
+export {newTodo, newTodoWithImage, updateTodo, getAllTodos, getOneTodo, deleteTodo}
